@@ -65,9 +65,9 @@ config ZRAM_DEF_COMP
 	default "lz4" if ZRAM_DEF_COMP_LZ4
 	default "lz4hc" if ZRAM_DEF_COMP_LZ4HC
 	default "lz4k" if ZRAM_DEF_COMP_LZ4K
-        default "lz4kd" if ZRAM_DEF_COMP_LZ4KD
-        default "deflate" if ZRAM_DEF_COMP_DEFLATE
-        default "842" if ZRAM_DEF_COMP_842
+	default "lz4kd" if ZRAM_DEF_COMP_LZ4KD
+	default "deflate" if ZRAM_DEF_COMP_DEFLATE
+	default "842" if ZRAM_DEF_COMP_842
 	default "zstd" if ZRAM_DEF_COMP_ZSTD
 
 config ZRAM_WRITEBACK
