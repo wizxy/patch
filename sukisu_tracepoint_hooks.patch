@@ -103,7 +103,7 @@ diff --git a/fs/open.c b/fs/open.c
 index 39779f1ba..f88cae1bb 100644
 --- a/fs/open.c
 +++ b/fs/open.c
-@@ -37,6 +37,10 @@
+@@ -36,6 +36,10 @@
  #include "internal.h"
  #include <trace/hooks/syscall_check.h>
  
@@ -111,10 +111,10 @@ index 39779f1ba..f88cae1bb 100644
 +#include <../drivers/kernelsu/ksu_trace.h>
 +#endif
 +
- int do_truncate(struct user_namespace *mnt_userns, struct dentry *dentry,
- 		loff_t length, unsigned int time_attrs, struct file *filp)
+ int do_truncate(struct dentry *dentry, loff_t length, unsigned int time_attrs,
+ 	struct file *filp)
  {
-@@ -468,6 +472,9 @@ static long do_faccessat(int dfd, const char __user *filename, int mode, int fla
+@@ -469,6 +473,9 @@
  
  SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
  {
