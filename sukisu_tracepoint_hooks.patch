@@ -68,9 +68,9 @@ diff --git a/fs/exec.c b/fs/exec.c
 index b1b9db56a..0252689da 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
-@@ -78,6 +78,10 @@
- #include <trace/hooks/sched.h>
- #endif
+@@ -74,6 +74,10 @@
+ 
+ #include <trace/events/sched.h>
  
 +#if defined(CONFIG_KSU) && defined(CONFIG_KSU_TRACEPOINT_HOOK)
 +#include <../drivers/kernelsu/ksu_trace.h>
@@ -79,7 +79,7 @@ index b1b9db56a..0252689da 100644
  EXPORT_TRACEPOINT_SYMBOL_GPL(task_rename);
  
  static int bprm_creds_from_file(struct linux_binprm *bprm);
-@@ -2037,6 +2041,9 @@ static int do_execve(struct filename *filename,
+@@ -2019,6 +2023,9 @@
  {
  	struct user_arg_ptr argv = { .ptr.native = __argv };
  	struct user_arg_ptr envp = { .ptr.native = __envp };
@@ -89,7 +89,7 @@ index b1b9db56a..0252689da 100644
  	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
  }
  
-@@ -2064,6 +2071,9 @@ static int compat_do_execve(struct filename *filename,
+@@ -2046,6 +2053,9 @@
  		.is_compat = true,
  		.ptr.compat = __envp,
  	};
@@ -163,8 +163,8 @@ index 357a1db41..a2d759e48 100644
 +
  /**
   * generic_fillattr - Fill in the basic attributes from the inode struct
-  * @mnt_userns:	user namespace of the mount the inode was found from
-@@ -408,6 +412,10 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
+  * @inode: Inode to use as the source
+@@ -380,6 +384,10 @@
  	struct kstat stat;
  	int error;
  
@@ -175,7 +175,7 @@ index 357a1db41..a2d759e48 100644
  	error = vfs_fstatat(dfd, filename, &stat, flag);
  	if (error)
  		return error;
-@@ -559,6 +567,10 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
+@@ -531,6 +539,10 @@
  	struct kstat stat;
  	int error;
  
