@@ -1,19 +1,5 @@
-From b3c6f133ac254291579ad35df54d340e9c614189 Mon Sep 17 00:00:00 2001
-From: ShirkNeko <109797057+ShirkNeko@users.noreply.github.com>
-Date: Thu, 14 Aug 2025 21:14:03 +0800
-Subject: [PATCH] sukisu_tracepoint_hooks
-
----
- drivers/input/input.c |  8 ++++++++
- drivers/tty/pty.c     |  8 ++++++++
- fs/exec.c             | 10 ++++++++++
- fs/open.c             |  7 +++++++
- fs/read_write.c       |  7 +++++++
- fs/stat.c             | 12 ++++++++++++
- 6 files changed, 52 insertions(+)
-
 diff --git a/drivers/input/input.c b/drivers/input/input.c
-index 171f71bd4..0498334ce 100644
+index 9190aa182..ef3a7c4ed 100644
 --- a/drivers/input/input.c
 +++ b/drivers/input/input.c
 @@ -26,6 +26,10 @@
@@ -27,8 +13,8 @@ index 171f71bd4..0498334ce 100644
  MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
  MODULE_DESCRIPTION("Input core");
  MODULE_LICENSE("GPL");
-@@ -451,6 +455,10 @@ void input_event(struct input_dev *dev,
- {
+@@ -473,6 +477,10 @@ void input_inject_event(struct input_handle *handle,
+ 	struct input_handle *grab;
  	unsigned long flags;
  
 +#if defined(CONFIG_KSU) && defined(CONFIG_KSU_TRACEPOINT_HOOK)
@@ -36,10 +22,10 @@ index 171f71bd4..0498334ce 100644
 +#endif
 +
  	if (is_event_supported(type, dev->evbit, EV_MAX)) {
- 
  		spin_lock_irqsave(&dev->event_lock, flags);
+ 
 diff --git a/drivers/tty/pty.c b/drivers/tty/pty.c
-index 752dab335..b2d8b180a 100644
+index ca3e5a6c1..2d367f55d 100644
 --- a/drivers/tty/pty.c
 +++ b/drivers/tty/pty.c
 @@ -31,6 +31,10 @@
@@ -53,7 +39,7 @@ index 752dab335..b2d8b180a 100644
  #undef TTY_DEBUG_HANGUP
  #ifdef TTY_DEBUG_HANGUP
  # define tty_debug_hangup(tty, f, args...)	tty_debug(tty, f, ##args)
-@@ -707,6 +711,10 @@ static struct tty_struct *pts_unix98_lookup(struct tty_driver *driver,
+@@ -717,6 +721,10 @@ static struct tty_struct *pts_unix98_lookup(struct tty_driver *driver,
  {
  	struct tty_struct *tty;
  
@@ -65,7 +51,7 @@ index 752dab335..b2d8b180a 100644
  	tty = devpts_get_priv(file->f_path.dentry);
  	mutex_unlock(&devpts_mutex);
 diff --git a/fs/exec.c b/fs/exec.c
-index b1b9db56a..0252689da 100644
+index 4cbc211e9..634f7fd82 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
 @@ -74,6 +74,10 @@
@@ -79,28 +65,31 @@ index b1b9db56a..0252689da 100644
  EXPORT_TRACEPOINT_SYMBOL_GPL(task_rename);
  
  static int bprm_creds_from_file(struct linux_binprm *bprm);
-@@ -2019,6 +2023,9 @@
+@@ -2017,6 +2021,11 @@ static int do_execve(struct filename *filename,
  {
  	struct user_arg_ptr argv = { .ptr.native = __argv };
  	struct user_arg_ptr envp = { .ptr.native = __envp };
++
 +#if defined(CONFIG_KSU) && defined(CONFIG_KSU_TRACEPOINT_HOOK)
 +    trace_ksu_trace_execveat_hook((int *)AT_FDCWD, &filename, &argv, &envp, 0);
 +#endif
++
  	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
  }
  
-@@ -2046,6 +2053,9 @@
- 		.is_compat = true,
- 		.ptr.compat = __envp,
- 	};
+@@ -2028,6 +2037,10 @@ static int do_execveat(int fd, struct filename *filename,
+ 	struct user_arg_ptr argv = { .ptr.native = __argv };
+ 	struct user_arg_ptr envp = { .ptr.native = __envp };
+ 
 +#if defined(CONFIG_KSU) && defined(CONFIG_KSU_TRACEPOINT_HOOK)
 +    trace_ksu_trace_execveat_sucompat_hook((int *)AT_FDCWD, &filename, NULL, NULL, NULL); /* 32-bit su */
 +#endif
- 	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
++
+ 	return do_execveat_common(fd, filename, argv, envp, flags);
  }
  
 diff --git a/fs/open.c b/fs/open.c
-index 39779f1ba..f88cae1bb 100644
+index ee284a930..b090e616d 100644
 --- a/fs/open.c
 +++ b/fs/open.c
 @@ -36,6 +36,10 @@
@@ -114,18 +103,20 @@ index 39779f1ba..f88cae1bb 100644
  int do_truncate(struct dentry *dentry, loff_t length, unsigned int time_attrs,
  	struct file *filp)
  {
-@@ -469,6 +473,9 @@
+@@ -469,6 +473,11 @@ static long do_faccessat(int dfd, const char __user *filename, int mode, int fla
  
  SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
  {
++
 +#if defined(CONFIG_KSU) && defined(CONFIG_KSU_TRACEPOINT_HOOK)
 +	trace_ksu_trace_faccessat_hook(&dfd, &filename, &mode, NULL);
 +#endif
++
  	return do_faccessat(dfd, filename, mode, 0);
  }
  
 diff --git a/fs/read_write.c b/fs/read_write.c
-index 3f6818620..926176dfe 100644
+index 729c02a91..4acd1a645 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
 @@ -25,6 +25,10 @@
@@ -139,18 +130,20 @@ index 3f6818620..926176dfe 100644
  const struct file_operations generic_ro_fops = {
  	.llseek		= generic_file_llseek,
  	.read_iter	= generic_file_read_iter,
-@@ -630,6 +634,9 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
+@@ -641,6 +645,11 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
  
  SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
  {
++
 +#if defined(CONFIG_KSU) && defined(CONFIG_KSU_TRACEPOINT_HOOK)
 +    trace_ksu_trace_sys_read_hook(fd, &buf, &count);
 +#endif
++
  	return ksys_read(fd, buf, count);
  }
  
 diff --git a/fs/stat.c b/fs/stat.c
-index 357a1db41..a2d759e48 100644
+index c6a2e1098..d0051592e 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -24,6 +24,10 @@
@@ -164,7 +157,7 @@ index 357a1db41..a2d759e48 100644
  /**
   * generic_fillattr - Fill in the basic attributes from the inode struct
   * @inode: Inode to use as the source
-@@ -380,6 +384,10 @@
+@@ -380,6 +384,10 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
  	struct kstat stat;
  	int error;
  
@@ -175,7 +168,7 @@ index 357a1db41..a2d759e48 100644
  	error = vfs_fstatat(dfd, filename, &stat, flag);
  	if (error)
  		return error;
-@@ -531,6 +539,10 @@
+@@ -531,6 +539,10 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
  	struct kstat stat;
  	int error;
  
@@ -186,6 +179,3 @@ index 357a1db41..a2d759e48 100644
  	error = vfs_fstatat(dfd, filename, &stat, flag);
  	if (error)
  		return error;
--- 
-2.34.1
-
